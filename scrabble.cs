@@ -2,196 +2,16 @@ using System.Collections.Generic;
 using System;
 using System.Security.Cryptography.X509Certificates;
 
-public class TileBag
-{
-    public static List<char> contents = new();
-
-    public static void Add(char letter, int amt=1)
-    {
-        for(int i = 0; i< amt; i++)
-        {
-            contents.Add(letter);
-        }
-    }
-
-    public static char Draw()
-    {
-        Random random = new Random();
-        int index = random.Next(0, contents.Count);
-        char val = contents[index];
-        contents.RemoveAt(index);
-        return val;
-    }
-    public static bool IsEmpty()
-    {
-        if (contents.Count == 0)
-        {
-            return true;
-        }
-        return false;
-    }
-}
-
-public class Tile
-{
-    public int Quantity { get; set; }
-    public int Score { get; set; }
-
-    public Tile(int quantity, int score)
-    {
-        Quantity = quantity;
-        Score = score;
-    }
-}
-
-public class Player
-{
-    public int playerId { get; set; }
-
-    public Dictionary<char, int> hand = new();
-
-    public int score = 0;
-
-    public int handSize = 0;
-
-    public bool TakeTurn()
-    {
-        List<char> tempHand = new();
-        foreach (char c in hand.Keys)
-        {
-            for (int i = 0; i < hand[c]; i++)
-            {
-                tempHand.Add(c);
-            }
-        }
-        string joinedTiles = string.Join(" ", tempHand);
-        Console.WriteLine($"Your letters are: {joinedTiles} ");
-        Console.WriteLine($"Please select what you would like to do: Place a word (input: '1'), replace your tiles (input: '2'), or pass your turn (input: '3'). There are {TileBag.contents.Count} tiles remaining in the bag.");
-        string playerChoice = Console.ReadLine();
-        if ( playerChoice == "1")
-        {
-            Console.WriteLine("You have chosen to place a word. Please input the word you would like to place: ");
-            string playerWord = Console.ReadLine();
-            Place(playerWord);
-        }
-        else if ( playerChoice == "2")
-        {
-            Console.WriteLine("You have chosen to replace your tiles. Please input the tiles you would like to replace: ");
-            string playerReplace = Console.ReadLine();
-            Replace(playerReplace);
-        }
-        else if ( playerChoice == "3")
-        {
-            return false;
-        }
-        else
-        {
-            TakeTurn();
-        }
-        return true;
-    }
-    
-    public void Place(string playerWord)
-    {
-        string upperWord = playerWord.ToUpper();
-        if(!ValidWord())
-        {
-            return;
-        }
-        foreach (char ch in upperWord)
-        {
-            score += GamePlay.letterTiles[ch].Score;
-            if (TileBag.IsEmpty())
-            {
-                return;
-            }
-            char newLetter = TileBag.Draw();
-            hand[ch]--;
-            if (!hand.ContainsKey(newLetter))
-            {
-                hand[newLetter] = 1;
-            }
-            else
-            {
-                hand[newLetter]++;
-            }
-
-        }
-        Console.WriteLine($"Good job! Your current score is: {score}");
-    }
-
-    public void Replace(string playerReplace)
-    {
-        Dictionary<char, int> counts = new();
-        if (TileBag.contents.Count < playerReplace.Length)
-        {
-            Console.WriteLine($"You have input too many letters. There are {TileBag.contents.Count} tiles left in the bag. Please try again.");
-            TakeTurn();
-            return;
-        }
-        foreach ( char letter in playerReplace )
-        {
-            if (!hand.ContainsKey(letter))
-            {
-                Console.WriteLine("You have input a letter that is not in your hand. Please try again.");
-                TakeTurn();
-                return;
-            }
-            if (!counts.ContainsKey(letter))
-            {
-                counts[letter] = 1;
-            }
-            else if (counts[letter] == hand[letter])
-            {
-                Console.WriteLine("You do not have enough of this letter to replace at this time. Please try again.");
-                TakeTurn();
-                return;
-            }
-            else
-            {
-                counts[letter]++;
-            }
-        }
-        foreach (char letter in counts.Keys)
-        {
-            hand[letter] -= counts[letter];
-            if (hand[letter] == 0 )
-            {
-                hand.Remove(letter);
-            }
-        }
-        for (int i = 0; i < playerReplace.Length; i++)
-        {
-            char newTile = TileBag.Draw();
-            if(!hand.ContainsKey(newTile))
-            {
-                hand[newTile] = 1;
-            }
-            else
-            {
-                hand[newTile]++;
-            }
-        }
-        foreach (char letter in playerReplace)
-        {
-            TileBag.Add(letter);
-        }
-    }
-
-    public static bool ValidWord()
-    {
-        //would bring in API to use a dictionary to verify word
-        return true;
-    }
-}
-public class GamePlay
+public class Scrabble 
 {
 
-    public static List<Player> players = new();
+    public TileBag tileBag = new();
 
-    public static int numPasses = 0;
+    public   List<Player> players = new();
 
-    public static Dictionary<char, Tile> letterTiles = new()
+    public   int numPasses = 0;
+
+    public   Dictionary<char, Tile> letterTiles = new()
     {
         {'A', new Tile(9, 1)},
         {'B', new Tile(2, 3)},
@@ -220,16 +40,197 @@ public class GamePlay
         {'Y', new Tile(2, 4)},
         {'Z', new Tile(1, 10)},
     };
-
-    public static void gameSetup()
+    public class TileBag
     {
-        foreach(char c in letterTiles.Keys)
+        public List<char> contents = new();
+
+        public void Add(char letter, int amt=1)
         {
-            TileBag.Add(c, letterTiles[c].Quantity);
+            for(int i = 0; i< amt; i++)
+            {
+                contents.Add(letter);
+            }
+        }
+
+        public char Draw()
+        {
+            Random random = new Random();
+            int index = random.Next(0, contents.Count);
+            char val = contents[index];
+            contents.RemoveAt(index);
+            return val;
+        }
+        public bool IsEmpty()
+        {
+            if (contents.Count == 0)
+            {
+                return true;
+            }
+            return false;
         }
     }
 
-    public static void playerSetup()
+    public class Tile
+    {
+        public int Quantity { get; set; }
+        public int Score { get; set; }
+
+        public Tile(int quantity, int score)
+        {
+            Quantity = quantity;
+            Score = score;
+        }
+    }
+
+    public class Player
+    {
+        public int playerId { get; set; }
+
+        public Dictionary<char, int> hand = new();
+
+        public int score = 0;
+
+        public int handSize = 0;
+
+        public bool TakeTurn()
+        {
+            List<char> tempHand = new();
+            foreach (char c in hand.Keys)
+            {
+                for (int i = 0; i < hand[c]; i++)
+                {
+                    tempHand.Add(c);
+                }
+            }
+            string joinedTiles = string.Join(" ", tempHand);
+            Console.WriteLine($"Your letters are: {joinedTiles} ");
+            Console.WriteLine($"Please select what you would like to do: Place a word (input: '1'), replace your tiles (input: '2'), or pass your turn (input: '3'). There are { tileBag.Count} tiles remaining in the bag.");
+            string playerChoice = Console.ReadLine();
+            if ( playerChoice == "1")
+            {
+                Console.WriteLine("You have chosen to place a word. Please input the word you would like to place: ");
+                string playerWord = Console.ReadLine();
+                Place(playerWord);
+            }
+            else if ( playerChoice == "2")
+            {
+                Console.WriteLine("You have chosen to replace your tiles. Please input the tiles you would like to replace: ");
+                string playerReplace = Console.ReadLine();
+                Replace(playerReplace);
+            }
+            else if ( playerChoice == "3")
+            {
+                return false;
+            }
+            else
+            {
+                TakeTurn();
+            }
+            return true;
+        }
+    
+        public void Place(string playerWord)
+        {
+            string upperWord = playerWord.ToUpper();
+            if(!ValidWord())
+            {
+                return;
+            }
+            foreach (char ch in upperWord)
+            {
+                score += GamePlay.letterTiles[ch].Score;
+                if ( tileBag.IsEmpty())
+                {
+                    return;
+                }
+                char newLetter =  tileBag.Draw();
+                hand[ch]--;
+                if (!hand.ContainsKey(newLetter))
+                {
+                    hand[newLetter] = 1;
+                }
+                else
+                {
+                    hand[newLetter]++;
+                }
+
+            }
+            Console.WriteLine($"Good job! Your current score is: {score}");
+        }
+
+        public void Replace(string playerReplace)
+        {
+            Dictionary<char, int> counts = new();
+            if (tileBag.Count < playerReplace.Length)
+            {
+                Console.WriteLine($"You have input too many letters. There are {tileBag.Count} tiles left in the bag. Please try again.");
+                TakeTurn();
+                return;
+            }
+            foreach ( char letter in playerReplace )
+            {
+                if (!hand.ContainsKey(letter))
+                {
+                    Console.WriteLine("You have input a letter that is not in your hand. Please try again.");
+                    TakeTurn();
+                    return;
+                }
+                if (!counts.ContainsKey(letter))
+                {
+                    counts[letter] = 1;
+                }
+                else if (counts[letter] == hand[letter])
+                {
+                    Console.WriteLine("You do not have enough of this letter to replace at this time. Please try again.");
+                    TakeTurn();
+                    return;
+                }
+                else
+                {
+                    counts[letter]++;
+                }
+            }
+            foreach (char letter in counts.Keys)
+            {
+                hand[letter] -= counts[letter];
+                if (hand[letter] == 0 )
+                {
+                    hand.Remove(letter);
+                }
+            }
+            for (int i = 0; i < playerReplace.Length; i++)
+            {
+                char newTile =  tileBag.Draw();
+                if(!hand.ContainsKey(newTile))
+                {
+                    hand[newTile] = 1;
+                }
+                else
+                {
+                    hand[newTile]++;
+                }
+            }
+            foreach (char letter in playerReplace)
+            {
+                 tileBag.Add(letter);
+            }
+        }
+
+        public   bool ValidWord()
+        {
+            //would bring in API to use a dictionary to verify word
+            return true;
+        }
+    }
+    public void gameSetup()
+    {
+        foreach(char c in letterTiles.Keys)
+        {
+             tileBag.Add(c, letterTiles[c].Quantity);
+        }
+    }
+
+    public void playerSetup()
     {
         Console.WriteLine("How many players will be joining this game? (Please only input a number)");
         string input = Console.ReadLine();
@@ -239,7 +240,7 @@ public class GamePlay
             Player player = new();
             player.playerId = i;
             while (player.handSize < 7) { 
-                char tile = TileBag.Draw();
+                char tile =  tileBag.Draw();
                 if (!player.hand.ContainsKey(tile))
                 {
                     player.hand[tile] = 1;
@@ -256,7 +257,7 @@ public class GamePlay
         }
     }
 
-    public static void gamePlay()
+    public void gamePlay()
     {
         bool gameOngoing = true;
         while ( gameOngoing )
@@ -270,7 +271,7 @@ public class GamePlay
                 else
                 {
                     numPasses = 0;
-                    if (TileBag.IsEmpty() && player.handSize == 0)
+                    if ( tileBag.IsEmpty() && player.handSize == 0)
                     {
                         gameOngoing = false;
                         break;
@@ -286,10 +287,12 @@ public class GamePlay
         Console.WriteLine($"The winner is: /Insert winner here/");
         return;
     }
-    public static void Main()
+    public void Main()
     {
         gameSetup();
         playerSetup();
         gamePlay();
     }
+}
+
 }
